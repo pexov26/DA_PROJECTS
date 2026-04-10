@@ -85,3 +85,4 @@ Prem Kumar
 MSc IT | Data Science Enthusiast
 GitHub: https://github.com/pexov26
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://daprojects-rc8u8u8hzdlmaec2bsl9zu.streamlit.app/)
