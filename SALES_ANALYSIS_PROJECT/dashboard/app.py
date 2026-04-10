@@ -1,3 +1,8 @@
+try:
+    import plotly.express as px
+except ImportError as e:
+    st.error(f"Plotly import failed: {e}")
+    st.stop()
 import streamlit as st
 import pandas as pd
 import plotly.express as px
