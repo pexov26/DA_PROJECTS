@@ -1,4 +1,14 @@
 import subprocess, sys
+
+# Directly install plotly in the cloud environment
+subprocess.run([sys.executable, "-m", "pip", "install", "plotly"])
+
+# Now proceed with the rest of your imports
+import streamlit as st
+import pandas as pd
+# ... (the rest of your code)
+
+import subprocess, sys
 subprocess.run([sys.executable, "-m", "pip", "install", "plotly"])
 import streamlit as st
 import subprocess, sys
