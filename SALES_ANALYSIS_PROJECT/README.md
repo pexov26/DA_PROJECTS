@@ -1,88 +1,70 @@
 # 📊 Sales & Revenue Analysis Dashboard
 
-## 🚀 Project Overview
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://daprojects-rc8u8u8hzdlmaec2bsl9zu.streamlit.app/)
 
-This project focuses on analyzing retail sales data and building an interactive dashboard to extract meaningful business insights.
-
-The dashboard allows users to explore sales performance across regions, categories, and cities using dynamic filters and visualizations.
+**Live Demo:** [Click here to view the dashboard](https://daprojects-rc8u8u8hzdlmaec2bsl9zu.streamlit.app/)
 
 ---
 
-## 📌 Features
+## 🚀 Project Overview
 
-* Interactive filters (Region, Category)
-* KPI metrics (Total Sales, Profit, Quantity)
-* Sales by Region visualization
-* Category-wise performance analysis
-* Top 10 cities by sales
-* Clean and responsive dashboard UI
+This project is an **interactive sales dashboard** built with Python and Streamlit. It transforms raw retail data into actionable business insights, allowing users to explore sales performance across regions, categories, cities, and time periods.
+
+The dashboard is deployed on **Streamlit Cloud** and can be accessed by anyone – no installation required.
+
+---
+
+## 📌 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Dynamic Filters** | Filter by Region, Category, and Date (if available) |
+| **KPI Metrics** | Total Sales, Total Profit, Quantity, and Profit Margin |
+| **Auto‑generated Insights** | Highlights top region, category, and loss‑making sub‑categories |
+| **Interactive Charts** | Bar charts (sorted), scatter plot for profitability, and top N cities slider |
+| **Data Export** | Download filtered data as CSV with one click |
+| **Responsive UI** | Clean layout with full‑width charts |
 
 ---
 
 ## 🛠️ Tech Stack
 
-* Python
-* Pandas
-* Plotly
-* Streamlit
+- **Python** – Core logic and data processing
+- **Pandas** – Data manipulation and aggregation
+- **Plotly** – Interactive visualizations
+- **Streamlit** – Dashboard framework and deployment
 
 ---
 
-## 📊 Dashboard Preview
+## 📈 Business Insights Gained
 
----
-
-## ▶️ How to Run
-
-```bash
-cd dashboard
-streamlit run app.py
-```
-
----
-
-## 📈 Key Insights
-
-* Certain regions contribute significantly more revenue than others
-* Specific product categories dominate overall sales
-* A small number of cities generate a large portion of total revenue
-* Profit does not always scale linearly with sales (business insight)
+- **Regional performance** – West region generates the highest revenue.
+- **Category dominance** – Technology leads in sales, but margin varies.
+- **Unprofitable products** – Some sub‑categories (e.g., Tables) have high sales but negative profit due to discounts.
+- **Profit margin** – Overall margin ~12.5%; low‑margin segments need review.
 
 ---
 
 ## 📁 Project Structure
 
-```
 SALES_ANALYSIS_PROJECT/
-│
 ├── data/
-│   └── superstore.csv
-│
+│ └── superstore.csv # Raw data (Sample Superstore)
 ├── dashboard/
-│   └── app.py
-│
+│ └── app.py # Main Streamlit application
 ├── notebooks/
-│   └── eda_visualization.ipynb
-│
+│ └── eda_visualization.ipynb # Exploratory analysis
 ├── images/
-│   └── dashboard.png
-│
-├── README.md
-└── requirements.txt
-```
+│ └── dashboard.png # Dashboard screenshot
+├── requirements.txt # Python dependencies
+├── README.md # Project documentation
+└── .gitignore # Ignored files
 
 ---
 
-## 🎯 Project Type
+## ▶️ How to Run Locally
 
-Data Analysis + Interactive Dashboard
-
----
-
-## 👤 Author
-
-Prem Kumar
-MSc IT | Data Science Enthusiast
-GitHub: https://github.com/pexov26
-
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://daprojects-rc8u8u8hzdlmaec2bsl9zu.streamlit.app/)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/pexov26/DA_PROJECTS.git
+   cd DA_PROJECTS/SALES_ANALYSIS_PROJECT
