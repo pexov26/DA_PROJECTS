@@ -1,13 +1,13 @@
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+
+# Try to import plotly, show friendly error if missing
 try:
     import plotly.express as px
 except ImportError as e:
-    st.error(f"Plotly import failed: {e}")
+    st.error(f"Plotly not installed. Error: {e}")
     st.stop()
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-from pathlib import Path
-
 # -------------------------------
 # PAGE CONFIG
 # -------------------------------
