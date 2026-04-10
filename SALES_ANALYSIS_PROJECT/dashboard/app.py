@@ -1,3 +1,5 @@
+import subprocess, sys
+subprocess.run([sys.executable, "-m", "pip", "install", "plotly", "pandas", "streamlit"])
 import streamlit as st
 import pandas as pd
 from pathlib import Path
