@@ -1,3 +1,25 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Streamlit
 .streamlit/
-*.pyc
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Data and Models
+data/*.csv
+models/*.pkl
