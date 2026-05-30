@@ -2,7 +2,7 @@
 
 # 🎓 Student Performance Forecaster
 
-[![Open in Streamlit](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/)](#) 
+[![Open in Streamlit](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/)](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/) 
 
 *(**Note:** Replace the `#` above with your Streamlit Cloud link once deployed!)*
 
