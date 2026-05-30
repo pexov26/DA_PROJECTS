@@ -27,7 +27,7 @@ def render_kpis(predicted_score, study_hours, sleep_hours, phone_usage):
             gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#4285F4"}}
         ))
         fig_prod.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-        st.plotly_chart(fig_prod, use_container_width=True)
+        st.plotly_chart(fig_prod, width="stretch")
 
     with col3:
         # Focus Gauge
@@ -39,7 +39,7 @@ def render_kpis(predicted_score, study_hours, sleep_hours, phone_usage):
             gauge={'axis': {'range': [0, 100]}, 'bar': {'color': "#34A853"}}
         ))
         fig_focus.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-        st.plotly_chart(fig_focus, use_container_width=True)
+        st.plotly_chart(fig_focus, width="stretch")
 
 
 def render_global_analysis(df):
@@ -52,7 +52,7 @@ def render_global_analysis(df):
             title="Student Grade Distribution", 
             color_discrete_map=tier_colors
         )
-        st.plotly_chart(fig_hist, use_container_width=True)
+        st.plotly_chart(fig_hist, width="stretch")
 
     with chart_col2:
         fig_scatter = px.scatter(
@@ -60,7 +60,7 @@ def render_global_analysis(df):
             color="Student_Tier", title="Impact of Phone Usage", 
             opacity=0.6, color_discrete_map=tier_colors
         )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        st.plotly_chart(fig_scatter, width="stretch")
 
 
 def render_deep_dive(df):
@@ -77,7 +77,7 @@ def render_deep_dive(df):
             color="Student_Tier", title="Avg Productivity Score by Tier",
             color_discrete_map=tier_colors
         )
-        st.plotly_chart(fig_prod_bar, use_container_width=True)
+        st.plotly_chart(fig_prod_bar, width="stretch")
 
     with bar_col2:
         fig_ai_bar = px.bar(
@@ -85,7 +85,7 @@ def render_deep_dive(df):
             color="Student_Tier", title="Avg AI Tool Usage (Hours) by Tier",
             color_discrete_map=tier_colors
         )
-        st.plotly_chart(fig_ai_bar, use_container_width=True)
+        st.plotly_chart(fig_ai_bar, width="stretch")
 
     # Area Chart
     df_sorted = df.sort_values("AI_Tool_Usage_Hours_Daily")
@@ -94,7 +94,7 @@ def render_deep_dive(df):
         color="Student_Tier", title="The AI-Productivity Connection: Impact of AI Tools on Output",
         color_discrete_map=tier_colors, line_group="Student_Tier"
     )
-    st.plotly_chart(fig_area, use_container_width=True)
+    st.plotly_chart(fig_area, width="stretch")
 
 
 def render_eligibility_pipeline(df):
@@ -113,7 +113,7 @@ def render_eligibility_pipeline(df):
                 "❌ Fine Required": "#EA4335"
             }
         )
-        st.plotly_chart(fig_eligibility, use_container_width=True)
+        st.plotly_chart(fig_eligibility, width="stretch")
 
     with eligibility_col2:
         tier_counts = df['Student_Tier'].value_counts().reset_index()
@@ -127,4 +127,4 @@ def render_eligibility_pipeline(df):
             legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
             margin=dict(l=20, r=20, t=40, b=20)
         )
-        st.plotly_chart(fig_donut, use_container_width=True)
+        st.plotly_chart(fig_donut, width="stretch")
