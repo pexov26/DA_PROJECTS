@@ -1,13 +1,28 @@
-import joblib
 import pandas as pd
+import joblib
+import streamlit as st
 
-def load_student_model():
-    return joblib.load("models/student_rf_model.pkl")
+@st.cache_resource
+def load_forecasting_model(model_path):
+    """
+    Loads the trained Random Forest model. 
+    Cached to prevent reloading on every user interaction.
+    """
+    return joblib.load(model_path)
 
-def make_prediction(model, study, sleep, phone):
+def get_prediction(model, study_hours, sleep_hours, phone_usage):
+    """
+    Takes the user inputs, packages them into a DataFrame, 
+    and returns the predicted exam score.
+    """
+    # Package inputs exactly how the model expects them
     input_data = pd.DataFrame({
-        'Study_Hours_Daily': [study],
-        'Sleep_Hours_Daily': [sleep],
-        'Phone_Usage_Hours_Daily': [phone]
+        'Study_Hours_Daily': [study_hours],
+        'Sleep_Hours_Daily': [sleep_hours],
+        'Phone_Usage_Hours_Daily': [phone_usage]
     })
-    return model.predict(input_data)[0]
+
+    # Make the prediction and return the single float value
+    predicted_score = model.predict(input_data)[0]
+    
+    return predicted_score
