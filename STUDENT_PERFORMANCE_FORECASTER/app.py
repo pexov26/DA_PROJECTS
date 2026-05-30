@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 
@@ -17,7 +18,15 @@ st.set_page_config(page_title="Student Forecaster", layout="wide")
 # 2. Data & Model Loading (Cached for fast performance)
 @st.cache_data
 def load_and_prep_data():
-    df = pd.read_csv("data/ultimate_student_metrics_30k.csv")
+    # 1. Get the exact folder where app.py is located
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    
+    # 2. Build the absolute path to the data file
+    DATA_PATH = os.path.join(BASE_DIR, "data", "ultimate_student_metrics_30k.csv")
+    
+    # 3. Load the data using the bulletproof path
+    df = pd.read_csv(DATA_PATH)
+    
     bins = [0, 50, 70, 85, 100]
     labels = ["Poor", "Below Average", "Average", "Toppers"]
     df['Student_Tier'] = pd.cut(df['Exam_Score'], bins=bins, labels=labels, include_lowest=True)
@@ -31,7 +40,11 @@ def load_and_prep_data():
     return df
 
 df = load_and_prep_data()
-model = load_forecasting_model("models/student_rf_model.pkl")
+
+# Build absolute path for the model too, just to be safe!
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "models", "student_rf_model.pkl")
+model = load_forecasting_model(MODEL_PATH)
 
 st.title("🎓 Student Performance Forecaster")
 
