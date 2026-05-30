@@ -18,7 +18,7 @@ def get_prediction(model, study_hours, sleep_hours, phone_usage):
     # Package inputs exactly how the model expects them
     input_data = pd.DataFrame({
         'Study_Hours_Daily': [study_hours],
-        'Sleep_Hours': [sleep_hours],       # <--- THIS IS THE FIXED LINE
+        'Sleep_Hours_Daily': [sleep_hours],       # <--- THIS IS THE FIXED LINE
         'Phone_Usage_Hours_Daily': [phone_usage]
     })
 
