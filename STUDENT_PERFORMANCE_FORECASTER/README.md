@@ -1,70 +1,31 @@
-
-
 # 🎓 Student Performance Forecaster
 
-[![Open in Streamlit](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/)](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/) 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/)
 
-*(**Note:** Replace the `#` above with your Streamlit Cloud link once deployed!)*
+**Live Demo:** [Click here to view the dashboard](https://daprojects-nfg8dch3y5tobk2jxzqyqw.streamlit.app/)
 
----
+## 📌 Project Overview
+The Student Performance Forecaster is an interactive, end-to-end Machine Learning web application designed to predict student exam scores based on daily lifestyle metrics. Built with a focus on clean UI and real-time inference, this dashboard allows educators and students to visualize how study habits, sleep schedules, and screen time impact academic success.
 
-## 🚀 Project Overview
+## 🚀 Key Features
+* **Real-Time Predictions:** A custom-trained Random Forest Regressor instantly forecasts exam scores as user inputs change.
+* **Performance Tiering:** Automatically categorizes predicted scores into actionable tiers (Toppers, Average, Below Average, Poor).
+* **Eligibility Pipeline:** Flags attendance warning levels and estimates potential academic fines.
+* **Interactive Dashboards:** Built-in exploratory data analysis (EDA) using Streamlit's native charting to visualize trends across 30,000 synthetic student records.
 
-This project is an **interactive Machine Learning dashboard** built with Python and Streamlit. It acts as an end-to-end predictive engine, allowing users to input daily habits (study hours, sleep, phone usage) to instantly forecast student exam performance and visualize key metrics like productivity and focus.
+## 🛠️ Technical Stack
+* **Language:** Python
+* **Frontend UI:** Streamlit
+* **Machine Learning:** Scikit-Learn (Random Forest Regressor)
+* **Data Manipulation:** Pandas, NumPy
+* **Model Serialization:** Joblib (Heavily compressed for fast cloud deployment)
+* **Version Control & Deployment:** Git, GitHub, Streamlit Community Cloud
 
-The dashboard utilizes a modular architecture for clean, scalable code and is designed for seamless deployment.
+## 💻 Local Installation & Setup
 
----
+If you want to run this project locally, follow these steps:
 
-## 📌 Key Features
-
-| Feature | Description |
-|---------|-------------|
-| **Machine Learning Inference** | Uses a pre-trained Random Forest model to predict exam scores instantly based on user input. |
-| **Dynamic UI Filters** | Interactive sidebar sliders for study hours, sleep hours, phone usage, and attendance. |
-| **Live KPI Gauges** | Real-time dynamic calculation of Productivity and Focus scores using Plotly gauges. |
-| **Deep-Dive Visualizations** | Analyzes the impact of AI tool usage on overall productivity across different student tiers. |
-| **Eligibility Pipeline** | Automatically calculates and visualizes exam eligibility and fine requirements based on attendance. |
-| **Modular Architecture** | Clean separation of concerns (UI, modeling, routing, and charts) for professional maintainability. |
-
----
-
-## 🛠️ Tech Stack
-
-- **Python** – Core logic and data processing
-- **Pandas** – Data manipulation and aggregation
-- **Scikit-Learn (Joblib)** – Machine Learning model training and inference
-- **Plotly** – Interactive charts and gauge visualizations
-- **Streamlit** – Dashboard framework and frontend UI
-
----
-
-## 📈 Key Insights & Functionality
-
-- **Habit Impact** – Instantly shows the correlation between screen time (phone usage) and a drop in forecasted exam scores.
-- **Productivity vs. AI** – Visualizes how different tiers of students utilize AI tools and its direct impact on their productivity output.
-- **Attendance Reality Check** – Clear, color-coded warnings and pipeline charts highlight students at risk of fines or exam ineligibility.
-- **Performance Tiers** – Segments students into Toppers, Average, Below Average, and Poor to find trends in global performance.
-
----
-
-## 📁 Project Structure
-
-```text
-STUDENT_PERFORMANCE_FORECASTER/
-│
-├── data/
-│   └── ultimate_student_metrics_30k.csv  # Base dataset
-├── models/
-│   └── student_rf_model.pkl              # Compiled Random Forest model weights
-├── notebooks/
-│   ├── 01_EDA_and_CrossFiltering.ipynb   # Exploratory Data Analysis & visual mapping
-│   └── 02_Model_Training_Pipeline.ipynb  # ML Training Pipeline & Hyperparameter tuning
-├── src/
-│   ├── charts_and_metrics.py             # Plotly visualization logic
-│   ├── model_inference.py                # Model loading and prediction logic
-│   └── ui_filters.py                     # Streamlit sidebar and UI inputs
-│
-├── app.py                                # Main Streamlit application runner
-├── requirements.txt                      # Python dependencies
-└── README.md                             # Project documentation
+**1. Clone the Data Analytics monorepo:**
+```bash
+git clone [https://github.com/pexov26/DA_PROJECTS.git](https://github.com/pexov26/DA_PROJECTS.git)
+cd DA_PROJECTS/STUDENT_PERFORMANCE_FORECASTER
