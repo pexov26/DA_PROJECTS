@@ -54,7 +54,9 @@ def main():
         
     model_path = os.path.join(models_dir, "student_rf_model.pkl")
     print(f"Saving trained model to {model_path}...")
-    joblib.dump(model, model_path)
+    
+    # Compress=3 shrinks the 190MB model down to around ~5MB!
+    joblib.dump(model, model_path, compress=3)
     
     print("Pipeline completed successfully!")
 
