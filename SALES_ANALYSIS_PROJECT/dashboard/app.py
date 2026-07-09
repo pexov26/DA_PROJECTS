@@ -8,6 +8,7 @@ import plotly.express as px
 
 try:
     import pdfplumber
+
     PDF_SUPPORT = True
 except ImportError:
     PDF_SUPPORT = False
@@ -203,7 +204,7 @@ if date_cols:
             filtered_df = filtered_df[
                 (filtered_df[date_col] >= pd.to_datetime(start_date)) &
                 (filtered_df[date_col] <= pd.to_datetime(end_date))
-            ]
+                ]
 
 if filtered_df.empty:
     st.warning("⚠️ No data matches the selected filters. Please adjust them.")
@@ -254,11 +255,18 @@ missing_by_col = filtered_df.isna().mean().sort_values(ascending=False)
 top_missing = missing_by_col[missing_by_col > 0].head(3)
 if not top_missing.empty:
     for col, pct in top_missing.items():
-        insights.append(f"- **🕳️ {col}**: {pct*100:.1f}% missing values.")
+        insights.append(f"- **🕳️ {col}**: {pct * 100:.1f}% missing values.")
 
 if len(numeric_cols) >= 2:
     corr = filtered_df[numeric_cols].corr(numeric_only=True).abs()
-    np.fill_diagonal(corr.values, 0)
+
+    # ---------------------------------------------------------
+    # BUG FIX: Create writable copy to prevent read-only error
+    # ---------------------------------------------------------
+    corr_array = corr.to_numpy(copy=True)
+    np.fill_diagonal(corr_array, 0)
+    corr.iloc[:, :] = corr_array
+
     if corr.size > 0:
         max_pair = corr.stack().idxmax()
         max_val = corr.stack().max()
