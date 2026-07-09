@@ -1,315 +1,351 @@
-import subprocess, sys, os
-
-# Force install required packages
-subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-subprocess.run([sys.executable, "-m", "pip", "install", "plotly", "pandas", "streamlit"])
-
-# Now normal imports
-import streamlit as st
-import pandas as pd
+import io
 from pathlib import Path
 
-# Then the rest of your code...
-
-import subprocess, sys
-
-# Directly install plotly in the cloud environment
-subprocess.run([sys.executable, "-m", "pip", "install", "plotly"])
-
-# Now proceed with the rest of your imports
 import streamlit as st
 import pandas as pd
-# ... (the rest of your code)
+import numpy as np
+import plotly.express as px
 
-import subprocess, sys
-subprocess.run([sys.executable, "-m", "pip", "install", "plotly"])
-import streamlit as st
-import subprocess, sys
-subprocess.run([sys.executable, "-m", "pip", "install", "plotly", "pandas", "streamlit"])
-import streamlit as st
-import pandas as pd
-from pathlib import Path
-
-# Try to import plotly, show friendly error if missing
 try:
-    import plotly.express as px
-except ImportError as e:
-    st.error(f"Plotly not installed. Error: {e}")
-    st.stop()
+    import pdfplumber
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
+
 # -------------------------------
 # PAGE CONFIG
 # -------------------------------
-st.set_page_config(page_title="Sales Dashboard", layout="wide")
+st.set_page_config(page_title="Data Analysis Dashboard", layout="wide")
+
+st.title("📊 File Analysis Dashboard")
+st.caption("Upload any CSV or PDF (with tables) and get an instant analysis — no fixed schema required.")
 
 # -------------------------------
-# TITLE
+# DEMO MODE TOGGLE
 # -------------------------------
-st.title("📊 Sales & Revenue Dashboard")
+SAMPLE_DATA_PATH = Path(__file__).parent.parent / "data" / "superstore.csv"
+
+st.sidebar.header("🎬 Demo Mode")
+demo_mode = st.sidebar.toggle(
+    "View demo dataset",
+    value=False,
+    help="Switch this on to explore the dashboard with the built-in sample Superstore dataset — no upload needed."
+)
 
 # -------------------------------
-# LOAD DATA (with caching & error handling)
+# FILE UPLOAD SECTION
 # -------------------------------
-@st.cache_data
-def load_data():
-    data_path = Path(__file__).parent.parent / "data" / "superstore.csv"
-    if not data_path.exists():
-        st.error(f"❌ Data file not found at {data_path}\nPlease make sure 'superstore.csv' is inside the 'data/' folder.")
-        st.stop()
-    df = pd.read_csv(data_path)
-    df.columns = df.columns.str.strip().str.replace(' ', '_')
-    if 'Order_Date' in df.columns:
-        df['Order_Date'] = pd.to_datetime(df['Order_Date'])
-    if 'Ship_Date' in df.columns:
-        df['Ship_Date'] = pd.to_datetime(df['Ship_Date'])
+st.sidebar.header("📁 Upload Data")
+uploaded_file = st.sidebar.file_uploader(
+    "Upload a CSV or PDF file",
+    type=["csv", "pdf"],
+    help="CSV: read directly. PDF: tables are extracted automatically.",
+    disabled=demo_mode,
+)
+
+if demo_mode:
+    st.sidebar.info("Demo mode is ON — using the built-in sample dataset.")
+elif uploaded_file is None:
+    st.info("👈 Turn on **Demo Mode** or upload a CSV/PDF file in the sidebar to get started.")
+    st.stop()
+
+
+# -------------------------------
+# HELPERS
+# -------------------------------
+@st.cache_data(show_spinner=False)
+def extract_pdf_tables(file_bytes):
+    """Extract all tables found in a PDF, returns list of dicts with page, index, df."""
+    results = []
+    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+        for page_num, page in enumerate(pdf.pages, start=1):
+            page_tables = page.extract_tables()
+            for t_idx, table in enumerate(page_tables, start=1):
+                if table and len(table) > 1:
+                    header, *rows = table
+                    header = [str(h).strip() if h else f"col_{i}" for i, h in enumerate(header)]
+                    df = pd.DataFrame(rows, columns=header)
+                    results.append({"page": page_num, "index": t_idx, "df": df})
+    return results
+
+
+def coerce_types(df):
+    """Try to convert object columns to numeric or datetime where it makes sense."""
+    df = df.copy()
+    df.columns = [str(c).strip().replace(" ", "_") for c in df.columns]
+
+    for col in df.columns:
+        if df[col].dtype == object:
+            # try numeric first
+            cleaned = (
+                df[col]
+                .astype(str)
+                .str.replace(",", "", regex=False)
+                .str.replace("$", "", regex=False)
+                .str.replace("%", "", regex=False)
+                .str.strip()
+            )
+            numeric = pd.to_numeric(cleaned, errors="coerce")
+            if numeric.notna().mean() > 0.8:
+                df[col] = numeric
+                continue
+
+            # try datetime
+            parsed = pd.to_datetime(df[col], errors="coerce")
+            if parsed.notna().mean() > 0.8:
+                df[col] = parsed
+                continue
+
     return df
 
-df = load_data()   # IMPORTANT: call the function
+
+def load_csv(file):
+    df = pd.read_csv(file)
+    return coerce_types(df)
+
+
+@st.cache_data(show_spinner=False)
+def load_sample_data():
+    if not SAMPLE_DATA_PATH.exists():
+        return None
+    df = pd.read_csv(SAMPLE_DATA_PATH)
+    return coerce_types(df)
+
 
 # -------------------------------
-# VALIDATE REQUIRED COLUMNS
+# LOAD DATA
 # -------------------------------
-required_columns = ['Sales', 'Profit', 'Quantity', 'Region', 'Category', 'City']
-missing_cols = [col for col in required_columns if col not in df.columns]
-if missing_cols:
-    st.error(f"❌ Missing required columns: {missing_cols}\nPlease check your CSV file.")
+df = None
+
+if demo_mode:
+    df = load_sample_data()
+    if df is None:
+        st.error(
+            f"❌ Demo dataset not found at `{SAMPLE_DATA_PATH}`.\n\n"
+            "Make sure 'superstore.csv' is inside the project's 'data/' folder, "
+            "or turn off Demo Mode and upload your own file."
+        )
+        st.stop()
+    st.sidebar.success(f"✅ Demo dataset loaded ({len(df):,} rows, {len(df.columns)} cols)")
+
+else:
+    file_bytes = uploaded_file.getvalue()
+    file_name = uploaded_file.name.lower()
+
+    if file_name.endswith(".csv"):
+        try:
+            df = load_csv(io.BytesIO(file_bytes))
+            st.sidebar.success(f"✅ Loaded '{uploaded_file.name}' ({len(df):,} rows, {len(df.columns)} cols)")
+        except Exception as e:
+            st.error(f"❌ Could not read this CSV. Error: {e}")
+            st.stop()
+
+    elif file_name.endswith(".pdf"):
+        if not PDF_SUPPORT:
+            st.error("❌ PDF support requires the 'pdfplumber' package. Add it to requirements.txt and reinstall.")
+            st.stop()
+
+        with st.spinner("Extracting tables from PDF..."):
+            tables = extract_pdf_tables(file_bytes)
+
+        if not tables:
+            st.warning("⚠️ No tables were found in this PDF. Only PDFs containing tabular data can be analyzed.")
+            st.stop()
+
+        if len(tables) == 1:
+            chosen = tables[0]
+        else:
+            labels = [f"Page {t['page']}, Table {t['index']} ({len(t['df'])} rows)" for t in tables]
+            choice = st.sidebar.selectbox("Multiple tables found — choose one to analyze", labels)
+            chosen = tables[labels.index(choice)]
+
+        df = coerce_types(chosen["df"])
+        st.sidebar.success(f"✅ Loaded table from page {chosen['page']} ({len(df):,} rows, {len(df.columns)} cols)")
+
+if df is None or df.empty:
+    st.warning("⚠️ No usable data found in this file.")
     st.stop()
+
+# -------------------------------
+# DETECT COLUMN TYPES
+# -------------------------------
+numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+date_cols = df.select_dtypes(include=["datetime64[ns]"]).columns.tolist()
+categorical_cols = [c for c in df.columns if c not in numeric_cols and c not in date_cols]
 
 # -------------------------------
 # SIDEBAR FILTERS
 # -------------------------------
 st.sidebar.header("Filter Data")
+filtered_df = df.copy()
 
-region = st.sidebar.multiselect(
-    "Select Region",
-    options=df['Region'].unique(),
-    default=df['Region'].unique()
-)
+# Categorical filters (limit to reasonably low-cardinality columns)
+filterable_cats = [c for c in categorical_cols if df[c].nunique(dropna=True) <= 50]
+for col in filterable_cats[:5]:
+    options = df[col].dropna().unique().tolist()
+    selected = st.sidebar.multiselect(f"{col}", options=options, default=options)
+    if selected:
+        filtered_df = filtered_df[filtered_df[col].isin(selected)]
 
-category = st.sidebar.multiselect(
-    "Select Category",
-    options=df['Category'].unique(),
-    default=df['Category'].unique()
-)
+# Date filter (first date column only)
+if date_cols:
+    date_col = date_cols[0]
+    min_date, max_date = df[date_col].min(), df[date_col].max()
+    if pd.notna(min_date) and pd.notna(max_date):
+        date_range = st.sidebar.date_input(
+            f"Filter by {date_col}",
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date,
+        )
+        if isinstance(date_range, tuple) and len(date_range) == 2:
+            start_date, end_date = date_range
+            filtered_df = filtered_df[
+                (filtered_df[date_col] >= pd.to_datetime(start_date)) &
+                (filtered_df[date_col] <= pd.to_datetime(end_date))
+            ]
 
-if 'Order_Date' in df.columns:
-    st.sidebar.subheader("Filter by Date")
-    min_date = df['Order_Date'].min()
-    max_date = df['Order_Date'].max()
-    date_range = st.sidebar.date_input(
-        "Select date range",
-        value=(min_date, max_date),
-        min_value=min_date,
-        max_value=max_date
-    )
-else:
-    date_range = None
-    # st.sidebar.info("Order_Date column not found. Date filtering disabled.")   # commented out
-
-# -------------------------------
-# APPLY FILTERS
-# -------------------------------
-filtered_df = df[
-    (df['Region'].isin(region)) &
-    (df['Category'].isin(category))
-]
-
-if 'Order_Date' in df.columns and date_range and len(date_range) == 2:
-    start_date, end_date = date_range
-    filtered_df = filtered_df[
-        (filtered_df['Order_Date'] >= pd.to_datetime(start_date)) &
-        (filtered_df['Order_Date'] <= pd.to_datetime(end_date))
-    ]
-
-# -------------------------------
-# CHECK FOR EMPTY FILTERED DATA
-# -------------------------------
 if filtered_df.empty:
-    st.warning("⚠️ No data matches the selected filters. Please adjust Region, Category, or Date range.")
+    st.warning("⚠️ No data matches the selected filters. Please adjust them.")
     st.stop()
 
 # -------------------------------
-# KPI METRICS (4 columns with profit margin)
+# OVERVIEW METRICS
 # -------------------------------
-st.subheader("Key Metrics")
-
-col1, col2, col3, col4 = st.columns(4)
-
-total_sales = filtered_df['Sales'].sum()
-total_profit = filtered_df['Profit'].sum()
-total_quantity = int(filtered_df['Quantity'].sum())
-profit_margin = (total_profit / total_sales * 100) if total_sales > 0 else 0
-
-col1.metric("Total Sales", f"${total_sales:,.2f}")
-col2.metric("Total Profit", f"${total_profit:,.2f}")
-col3.metric("Total Quantity", f"{total_quantity:,}")
-col4.metric("Profit Margin", f"{profit_margin:.1f}%")
+st.subheader("Overview")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Rows", f"{len(filtered_df):,}")
+c2.metric("Columns", f"{len(filtered_df.columns):,}")
+missing_pct = filtered_df.isna().mean().mean() * 100
+c3.metric("Missing Data", f"{missing_pct:.1f}%")
+c4.metric("Numeric Columns", f"{len(numeric_cols)}")
 
 # -------------------------------
-# AUTO-GENERATED INSIGHTS
+# KPI ON A CHOSEN NUMERIC COLUMN
+# -------------------------------
+if numeric_cols:
+    st.subheader("💰 Key Metric Summary")
+    metric_col = st.selectbox("Choose a numeric column to summarize", numeric_cols)
+    k1, k2, k3, k4 = st.columns(4)
+    series = filtered_df[metric_col].dropna()
+    k1.metric(f"Sum of {metric_col}", f"{series.sum():,.2f}")
+    k2.metric(f"Average {metric_col}", f"{series.mean():,.2f}")
+    k3.metric(f"Max {metric_col}", f"{series.max():,.2f}")
+    k4.metric(f"Min {metric_col}", f"{series.min():,.2f}")
+
+# -------------------------------
+# AUTO INSIGHTS
 # -------------------------------
 st.subheader("💡 Key Insights")
+insights = []
 
-# Calculate top region
-region_sales = filtered_df.groupby('Region')['Sales'].sum().reset_index()
-top_region = region_sales.loc[region_sales['Sales'].idxmax()]
-top_region_name = top_region['Region']
-top_region_sales = top_region['Sales']
+if numeric_cols:
+    for col in numeric_cols:
+        s = filtered_df[col].dropna()
+        if len(s) == 0:
+            continue
+        q1, q3 = s.quantile(0.25), s.quantile(0.75)
+        iqr = q3 - q1
+        outliers = s[(s < q1 - 1.5 * iqr) | (s > q3 + 1.5 * iqr)]
+        if len(outliers) > 0:
+            insights.append(f"- **⚠️ {col}**: {len(outliers)} potential outlier(s) detected.")
 
-# Calculate top category
-cat_sales = filtered_df.groupby('Category')['Sales'].sum().reset_index()
-top_cat = cat_sales.loc[cat_sales['Sales'].idxmax()]
-top_cat_name = top_cat['Category']
-top_cat_sales = top_cat['Sales']
+missing_by_col = filtered_df.isna().mean().sort_values(ascending=False)
+top_missing = missing_by_col[missing_by_col > 0].head(3)
+if not top_missing.empty:
+    for col, pct in top_missing.items():
+        insights.append(f"- **🕳️ {col}**: {pct*100:.1f}% missing values.")
 
-# Calculate profit margin (already have from KPIs, but recompute for safety)
-margin = (filtered_df['Profit'].sum() / filtered_df['Sales'].sum() * 100) if filtered_df['Sales'].sum() > 0 else 0
+if len(numeric_cols) >= 2:
+    corr = filtered_df[numeric_cols].corr(numeric_only=True).abs()
+    np.fill_diagonal(corr.values, 0)
+    if corr.size > 0:
+        max_pair = corr.stack().idxmax()
+        max_val = corr.stack().max()
+        if max_val > 0.6:
+            insights.append(f"- **🔗 Strong correlation**: {max_pair[0]} and {max_pair[1]} (r={max_val:.2f}).")
 
-# Find loss-making sub-categories
-sub_cat_col = None
-for col in filtered_df.columns:
-    if 'sub' in col.lower() and 'category' in col.lower():
-        sub_cat_col = col
-        break
+if categorical_cols:
+    col = categorical_cols[0]
+    top_val = filtered_df[col].mode()
+    if not top_val.empty:
+        insights.append(f"- **🏆 Most common {col}**: {top_val.iloc[0]}.")
 
-loss_count = 0
-loss_names = []
-if sub_cat_col:
-    subcat_profit = filtered_df.groupby(sub_cat_col)['Profit'].sum()
-    loss_makers = subcat_profit[subcat_profit < 0]
-    loss_count = len(loss_makers)
-    loss_names = loss_makers.index.tolist()
+if not insights:
+    insights.append("- No notable issues or patterns detected in this dataset.")
 
-# Build insight text
-insights = f"""
-- **🏆 Top Region**: {top_region_name} with **${top_region_sales:,.0f}** in sales.
-- **📦 Top Category**: {top_cat_name} with **${top_cat_sales:,.0f}** in sales.
-- **📊 Profit Margin**: {margin:.1f}% 
-"""
-
-# Add warning if margin is low
-if margin < 10:
-    insights += "  ⚠️ *Margin is below 10% – consider reviewing discounts or costs.*\n"
-else:
-    insights += "  ✅ *Healthy margin.*\n"
-
-# Add loss-making sub-categories info
-if loss_count > 0:
-    loss_list = ", ".join(loss_names[:3])  # show first 3 only
-    if loss_count > 3:
-        loss_list += f" and {loss_count - 3} more"
-    insights += f"- **⚠️ Loss-making sub‑categories**: {loss_count} found ({loss_list}).\n"
-else:
-    insights += "- **✅ Profitability**: All sub‑categories are profitable.\n"
-
-# Display insights in an info box
-st.info(insights)
+st.info("\n".join(insights))
 
 # -------------------------------
-# DATA PREVIEW
+# DATA PREVIEW + DOWNLOAD
 # -------------------------------
 st.subheader("Data Preview")
-st.write(filtered_df.head())
+st.dataframe(filtered_df.head(50), width='stretch')
 
-# Download button
 csv_data = filtered_df.to_csv(index=False)
 st.download_button(
-    label="📥 Download filtered data as CSV",
+    "📥 Download filtered data as CSV",
     data=csv_data,
-    file_name="filtered_sales_data.csv",
-    mime="text/csv"
+    file_name="filtered_data.csv",
+    mime="text/csv",
 )
 
 # -------------------------------
-# CHART 1: SALES BY REGION (sorted)
+# CHARTS
 # -------------------------------
-st.subheader("Sales by Region")
-region_sales = filtered_df.groupby('Region')['Sales'].sum().sort_values(ascending=False).reset_index()
-fig1 = px.bar(region_sales, x='Region', y='Sales', title="Sales by Region (Highest First)")
-st.plotly_chart(fig1, width='stretch')   # replaced use_container_width
+if categorical_cols:
+    st.subheader("Category Breakdown")
+    cat_col = st.selectbox("Choose a categorical column", categorical_cols, key="cat_chart")
+    if numeric_cols:
+        val_col = st.selectbox("Aggregate by numeric column", numeric_cols, key="cat_val")
+        agg_df = (
+            filtered_df.groupby(cat_col)[val_col]
+            .sum()
+            .sort_values(ascending=False)
+            .head(20)
+            .reset_index()
+        )
+        fig_cat = px.bar(agg_df, x=cat_col, y=val_col, title=f"{val_col} by {cat_col} (Top 20)")
+    else:
+        agg_df = filtered_df[cat_col].value_counts().head(20).reset_index()
+        agg_df.columns = [cat_col, "count"]
+        fig_cat = px.bar(agg_df, x=cat_col, y="count", title=f"Count of {cat_col} (Top 20)")
+    st.plotly_chart(fig_cat, width='stretch')
 
-# -------------------------------
-# CHART 2: SALES BY CATEGORY (sorted)
-# -------------------------------
-st.subheader("Sales by Category")
-category_sales = filtered_df.groupby('Category')['Sales'].sum().sort_values(ascending=False).reset_index()
-fig2 = px.bar(category_sales, x='Category', y='Sales', title="Sales by Category (Highest First)")
-st.plotly_chart(fig2, width='stretch')
+if numeric_cols:
+    st.subheader("Distribution")
+    dist_col = st.selectbox("Choose a numeric column", numeric_cols, key="dist_chart")
+    fig_hist = px.histogram(filtered_df, x=dist_col, title=f"Distribution of {dist_col}")
+    st.plotly_chart(fig_hist, width='stretch')
 
-# -------------------------------
-# CHART 3: TOP N CITIES (dynamic slider)
-# -------------------------------
-st.subheader("Top Cities by Sales")
-n_cities = st.slider("Number of top cities to display", min_value=5, max_value=20, value=10, step=1)
-top_cities = filtered_df.groupby('City')['Sales'].sum().nlargest(n_cities).reset_index()
-fig3 = px.bar(top_cities, x='City', y='Sales', title=f"Top {n_cities} Cities by Sales")
-st.plotly_chart(fig3, width='stretch')
-
-# -------------------------------
-# CHART 4: Scatter Plot (Sales vs Profit by Sub-Category)
-# -------------------------------
-st.subheader("Profitability by Sub‑Category")
-
-# Find sub-category column
-sub_cat_col = None
-for col in filtered_df.columns:
-    if 'sub' in col.lower() and 'category' in col.lower():
-        sub_cat_col = col
-        break
-
-if sub_cat_col:
-    subcat_data = filtered_df.groupby(sub_cat_col)[['Sales', 'Profit']].sum().reset_index()
-    fig_scatter = px.scatter(
-        subcat_data,
-        x='Sales',
-        y='Profit',
-        text=sub_cat_col,
-        title="Sales vs Profit by Sub‑Category (Size = Sales, Color = Profit)",
-        color='Profit',
-        color_continuous_scale='RdYlGn',
-        size='Sales',
-        size_max=60,
-        hover_name=sub_cat_col
+if len(numeric_cols) >= 2:
+    st.subheader("Correlation")
+    corr_matrix = filtered_df[numeric_cols].corr(numeric_only=True)
+    fig_corr = px.imshow(
+        corr_matrix,
+        text_auto=".2f",
+        color_continuous_scale="RdBu_r",
+        title="Correlation Heatmap",
+        zmin=-1,
+        zmax=1,
     )
-    fig_scatter.update_traces(textposition='top center')
-    fig_scatter.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
+    st.plotly_chart(fig_corr, width='stretch')
+
+    st.subheader("Scatter Plot")
+    sc1, sc2 = st.columns(2)
+    x_col = sc1.selectbox("X axis", numeric_cols, index=0, key="scatter_x")
+    y_col = sc2.selectbox("Y axis", numeric_cols, index=min(1, len(numeric_cols) - 1), key="scatter_y")
+    fig_scatter = px.scatter(filtered_df, x=x_col, y=y_col, title=f"{y_col} vs {x_col}")
     st.plotly_chart(fig_scatter, width='stretch')
-    
-    loss_makers = subcat_data[subcat_data['Profit'] < 0]
-    if not loss_makers.empty:
-        st.warning(f"⚠️ {len(loss_makers)} sub‑category(s) are operating at a loss: {', '.join(loss_makers[sub_cat_col].astype(str))}")
-else:
-    st.info("ℹ️ Sub‑Category column not found. Cannot create scatter plot.")
 
-    # -------------------------------
-# CHART 5: Monthly Sales Trend (if Order_Date exists)
-# -------------------------------
-st.subheader("📅 Monthly Sales Trend")
-
-if 'Order_Date' in filtered_df.columns:
-    # Create a copy and set date as index for resampling
-    trend_df = filtered_df.copy()
-    trend_df.set_index('Order_Date', inplace=True)
-    
-    # Resample by month and sum sales
-    monthly_sales = trend_df.resample('M')['Sales'].sum().reset_index()
-    
-    # Create line chart with markers
-    fig_line = px.line(
-        monthly_sales,
-        x='Order_Date',
-        y='Sales',
-        title="Total Sales per Month",
-        markers=True,
-        line_shape='linear'
+if date_cols and numeric_cols:
+    st.subheader("📅 Trend Over Time")
+    trend_date_col = date_cols[0]
+    trend_val_col = st.selectbox("Value to trend", numeric_cols, key="trend_val")
+    trend_df = filtered_df.dropna(subset=[trend_date_col]).copy()
+    trend_df = trend_df.set_index(trend_date_col).resample("ME")[trend_val_col].sum().reset_index()
+    fig_trend = px.line(
+        trend_df, x=trend_date_col, y=trend_val_col,
+        title=f"{trend_val_col} Over Time (Monthly)", markers=True
     )
-    
-    # Improve formatting
-    fig_line.update_layout(
-        xaxis_title="Month",
-        yaxis_title="Total Sales ($)",
-        hovermode='x unified'
-    )
-    
-    st.plotly_chart(fig_line, width='stretch')
-else:
-    st.info("ℹ️ Monthly trend chart requires an 'Order_Date' column. Add it to your CSV to enable this feature.")
+    st.plotly_chart(fig_trend, width='stretch')
